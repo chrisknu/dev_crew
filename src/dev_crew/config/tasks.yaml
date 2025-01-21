@@ -1,0 +1,112 @@
+requirements_analysis:
+  description: >
+    Analyze the provided requirements and create a detailed project plan.
+    Break down the requirements into specific tasks, estimate effort,
+    and identify potential risks and dependencies.
+    Remember to keep it simple - don't over-engineer if simpler solutions exist.
+  expected_output: >
+    A detailed project plan including:
+    - Task breakdown with clear, achievable steps
+    - Realistic effort estimates
+    - Risk assessment and mitigation strategies
+    - Dependencies and critical path
+    - Success criteria and acceptance tests
+    - Simplified approach where possible (KISS principle)
+  agent: project_manager
+  priority: high
+
+architecture_design:
+  description: >
+    Based on the project plan and requirements, create a high-level system architecture.
+    Focus on simplicity first - only add complexity where absolutely necessary.
+    Consider:
+    - System boundaries and components
+    - Technology stack selection
+    - Integration patterns
+    - Scalability and performance requirements
+    - Security considerations
+    - Cloud infrastructure design
+  expected_output: >
+    A focused architecture document including:
+    - High-level system architecture diagram
+    - Technology stack decisions with rationale
+    - Integration patterns and data flow
+    - Infrastructure requirements (kept minimal)
+    - Security considerations
+    - Performance considerations
+    - Explanation of where complexity was avoided
+  agent: architect
+  priority: high
+
+technical_design:
+  description: >
+    Based on the approved architecture, create detailed technical specifications
+    for implementation. Focus on component-level design and implementation details.
+    Maintain simplicity where possible.
+  expected_output: >
+    Detailed technical specifications including:
+    - Component design details
+    - API specifications
+    - Database schema
+    - Security implementation details
+    - Development guidelines
+    - Areas where complexity was reduced
+  agent: architect
+  priority: high
+
+implementation:
+  description: >
+    Implement the solution according to the approved architecture and technical design.
+    Follow established coding standards and best practices.
+  expected_output: >
+    - Working code implementation meeting requirements
+    - Unit tests and integration tests
+    - API documentation
+    - Database migrations
+    - Deployment configurations
+    - Clean, maintainable code structure
+  agent: senior_fullstack_engineer
+  priority: high
+  validation:
+    - type: file_exists
+      files:
+        - package.json
+        - tsconfig.json
+        - app/layout.tsx
+    - type: command_succeeds
+      command: npm run build
+
+quality_assurance:
+  description: >
+    Create and execute a comprehensive test plan to ensure the implementation
+    meets all requirements and quality standards.
+  expected_output: >
+    - Complete test suite with coverage
+    - Test plan and strategy
+    - Test cases documentation
+    - Test execution results
+    - Bug reports (if any)
+    - Quality assessment report
+  agent: qa_engineer
+  priority: high
+  validation:
+    - type: file_exists
+      files:
+        - jest.config.js
+        - coverage/lcov-report/index.html
+    - type: command_succeeds
+      command: npm test
+
+documentation:
+  description: >
+    Create comprehensive technical documentation for the solution.
+  expected_output: >
+    Complete technical documentation including:
+    - System overview and architecture
+    - API documentation
+    - Setup and deployment guides
+    - User guides and tutorials
+    - Maintenance and troubleshooting guides
+  agent: technical_writer
+  priority: medium
+  output_file: documentation.md
