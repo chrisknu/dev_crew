@@ -52,11 +52,41 @@ class FrameworkTool(BaseTool):
             abs_project_dir = os.path.abspath(project_dir)
             print(f"Setting up Next.js project in: {abs_project_dir}")
             
-            # Ensure we're in the project directory
-            os.makedirs(abs_project_dir, exist_ok=True)
+            # Clean up any existing files to avoid conflicts
+            if os.path.exists(abs_project_dir):
+                print("Cleaning up existing directory...")
+                for item in os.listdir(abs_project_dir):
+                    if item not in ['docs']:  # Preserve docs directory
+                        item_path = os.path.join(abs_project_dir, item)
+                        if os.path.isfile(item_path):
+                            os.remove(item_path)
+                        elif os.path.isdir(item_path):
+                            import shutil
+                            shutil.rmtree(item_path)
             
-            # Initialize Next.js project with interactive mode disabled
-            init_cmd = "npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias '@/*' --no-git --use-npm"
+            # Initialize Next.js project with correct non-interactive flags
+            init_cmd = (
+                "npx create-next-app@latest . "
+                "--yes "  # Must be first to skip all prompts
+                "--typescript "
+                "--tailwind "
+                "--eslint "
+                "--app "
+                "--src-dir "
+                "--import-alias '@/*' "
+                "--no-git "
+                "--use-npm "
+                "--experimental-app=false "  # Use equals for boolean flags
+                "--template=default "  # Use equals for value flags
+                "--ts=true "
+                "--js=false "
+                "--tailwind=true "
+                "--eslint=true "
+                "--app=true "
+                "--src-dir=true "
+                "--use-npm=true "
+                "--no-git=true "
+            )
             print(f"Executing command: {init_cmd}")
             results.append(self._execute_command(init_cmd, abs_project_dir))
             

@@ -288,7 +288,9 @@ Save the technical design document to: {os.path.join(self.project_name, 'docs/te
         input_file = os.path.join(self.project_name, 'docs/technical_design/technical_design.md')
         best_practices_file = os.path.join(self.project_name, 'best_practices.yaml')
         output_path = os.path.join(self.get_docs_dir('implementation'), output_file)
-        src_dir = os.path.join(self.workspace_dir, self.project_name, 'src')
+        
+        # Project should be set up in the project root, not in src
+        project_dir = os.path.join(self.workspace_dir, self.project_name)
         
         return Task(
             description=f"""First, read and analyze:
@@ -302,13 +304,13 @@ Then, implement the solution following these steps:
    ```python
    framework_tool = FrameworkTool()
    result = framework_tool._run(
-       project_dir="{src_dir}",
+       project_dir="{project_dir}",  # Set up in project root
        config_path="{best_practices_file}"
    )
    ```
 
 2. Core Implementation (following coding standards from best_practices.yaml)
-   - Implement the frontend components and pages
+   - Implement the frontend components and pages in src/
    - Set up the API routes and services
    - Configure database connections and models
    - Implement authentication and authorization
@@ -336,13 +338,13 @@ Document the implementation details in: {os.path.join(self.project_name, 'docs/i
             context=[{
                 "description": "Technical design to implement",
                 "expected_output": "Implementation summary",
-                "file": input_file,
-                "best_practices": best_practices_file,
-                "src_dir": src_dir,
+                "file": self.get_absolute_path(input_file),
+                "best_practices": self.get_absolute_path(best_practices_file),
+                "project_dir": project_dir,
                 "framework_setup": {
                     "tool": "FrameworkTool",
                     "args": {
-                        "project_dir": src_dir,
+                        "project_dir": project_dir,
                         "config_path": best_practices_file
                     }
                 }
