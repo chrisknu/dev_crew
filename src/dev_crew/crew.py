@@ -286,18 +286,28 @@ Save the technical design document to: {os.path.join(self.project_name, 'docs/te
     def implement_solution(self) -> Task:
         output_file = 'implementation_summary.md'
         input_file = os.path.join(self.project_name, 'docs/technical_design/technical_design.md')
+        best_practices_file = os.path.join(self.project_name, 'best_practices.yaml')
         output_path = os.path.join(self.get_docs_dir('implementation'), output_file)
+        src_dir = os.path.join(self.workspace_dir, self.project_name, 'src')
+        
         return Task(
-            description=f"""First, read and analyze the technical design document from: {input_file}
+            description=f"""First, read and analyze:
+1. Technical design document from: {input_file}
+2. Best practices and setup commands from: {best_practices_file}
 
 Then, implement the solution following these steps:
 
 1. Project Setup
-   - Initialize the Next.js project with TypeScript and TailwindCSS
-   - Set up the project structure according to the technical design
-   - Configure development tools and linters
+   Use the FrameworkTool to initialize the Next.js project:
+   ```python
+   framework_tool = FrameworkTool()
+   result = framework_tool._run(
+       project_dir="{src_dir}",
+       config_path="{best_practices_file}"
+   )
+   ```
 
-2. Core Implementation
+2. Core Implementation (following coding standards from best_practices.yaml)
    - Implement the frontend components and pages
    - Set up the API routes and services
    - Configure database connections and models
@@ -326,7 +336,16 @@ Document the implementation details in: {os.path.join(self.project_name, 'docs/i
             context=[{
                 "description": "Technical design to implement",
                 "expected_output": "Implementation summary",
-                "file": input_file
+                "file": input_file,
+                "best_practices": best_practices_file,
+                "src_dir": src_dir,
+                "framework_setup": {
+                    "tool": "FrameworkTool",
+                    "args": {
+                        "project_dir": src_dir,
+                        "config_path": best_practices_file
+                    }
+                }
             }],
             output_file=output_path
         )
@@ -443,9 +462,111 @@ Save the complete documentation to: {os.path.join(self.project_name, 'docs/docum
             output_file=output_path
         )
 
+    def validate_file_exists(self, file_path: str, description: str) -> bool:
+        """Validate that a required file exists"""
+        full_path = os.path.join(self.workspace_dir, file_path)
+        exists = os.path.exists(full_path)
+        if not exists:
+            print(f"❌ Validation Failed: {description} not found at {file_path}")
+        return exists
+
+    def validate_directory_structure(self, directory: str, required_files: list, description: str) -> bool:
+        """Validate that a directory contains required files/structure"""
+        full_path = os.path.join(self.workspace_dir, directory)
+        if not os.path.exists(full_path):
+            print(f"❌ Validation Failed: {description} directory not found at {directory}")
+            return False
+            
+        missing_files = []
+        for file in required_files:
+            if not os.path.exists(os.path.join(full_path, file)):
+                missing_files.append(file)
+        
+        if missing_files:
+            print(f"❌ Validation Failed: {description} missing required files: {', '.join(missing_files)}")
+            return False
+            
+        return True
+
+    def validate_project_setup(self) -> bool:
+        """Validate the complete project setup"""
+        validations = [
+            # Documentation structure
+            self.validate_directory_structure(
+                os.path.join(self.project_name, 'docs'),
+                ['requirements', 'architecture', 'technical_design', 'implementation', 'testing'],
+                "Documentation"
+            ),
+            
+            # Project files
+            self.validate_file_exists(
+                os.path.join(self.project_name, 'best_practices.yaml'),
+                "Best practices configuration"
+            ),
+            
+            # Next.js project structure
+            self.validate_directory_structure(
+                os.path.join(self.project_name, 'src'),
+                ['app', 'components', 'lib', 'styles'],
+                "Next.js project"
+            ),
+            
+            # Configuration files
+            self.validate_directory_structure(
+                self.project_name,
+                [
+                    'package.json',
+                    'tsconfig.json',
+                    'next.config.js',
+                    '.eslintrc.json',
+                    'tailwind.config.js',
+                    'postcss.config.js'
+                ],
+                "Project configuration"
+            )
+        ]
+        
+        return all(validations)
+
+    @task
+    def validate_implementation(self) -> Task:
+        """Task to validate the implementation"""
+        return Task(
+            description=f"""Validate the project implementation in {self.project_name}:
+
+1. Check Project Structure
+   - Verify Next.js app directory structure
+   - Validate presence of all configuration files
+   - Check for required components and utilities
+
+2. Validate Dependencies
+   - Verify package.json contains required dependencies
+   - Check for proper TypeScript configuration
+   - Validate ESLint and Prettier setup
+
+3. Test Configuration
+   - Verify Jest setup
+   - Check test file structure
+   - Validate coverage configuration
+
+4. Documentation Check
+   - Verify all documentation sections exist
+   - Check for required diagrams
+   - Validate API documentation
+
+Report any missing or incorrect items.""",
+            expected_output="Validation report detailing any issues found",
+            agent=self.qa_engineer(),
+            context=[{
+                "description": "Project validation",
+                "expected_output": "Validation report",
+                "project_dir": self.project_name
+            }]
+        )
+
     @crew
     def crew(self) -> Crew:
-        """Creates the SDLC crew"""
+        """Creates the SDLC crew with validation steps"""
         return Crew(
             agents=self.agents,
             tasks=[
@@ -453,6 +574,7 @@ Save the complete documentation to: {os.path.join(self.project_name, 'docs/docum
                 self.design_architecture(),
                 self.create_technical_design(),
                 self.implement_solution(),
+                self.validate_implementation(),  # Add validation after implementation
                 self.test_solution(),
                 self.create_documentation()
             ],
@@ -470,6 +592,85 @@ Save the complete documentation to: {os.path.join(self.project_name, 'docs/docum
         os.makedirs(self.project_dir, exist_ok=True)
         os.makedirs(self.docs_dir, exist_ok=True)
         
+        # Create best practices file
+        best_practices = """
+# Next.js 15 Best Practices and Setup Commands
+
+setup_commands:
+  - name: "Create Next.js Project"
+    command: "npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias '@/*'"
+    description: "Initialize a new Next.js 15 project with TypeScript, Tailwind CSS, ESLint, and App Router"
+
+  - name: "Install Core Dependencies"
+    command: "npm install @radix-ui/react-icons @radix-ui/themes class-variance-authority clsx tailwind-merge"
+    description: "Install essential UI and utility libraries"
+
+  - name: "Install Development Dependencies"
+    command: "npm install -D @types/node @types/react @types/react-dom @typescript-eslint/eslint-plugin @typescript-eslint/parser prettier prettier-plugin-tailwindcss"
+    description: "Install development and type dependencies"
+
+coding_standards:
+  typescript:
+    - "Use strict TypeScript configuration"
+    - "Enable all strict type checking options"
+    - "Use interface for object types"
+    - "Use type for union types and primitives"
+    - "Always specify return types for functions"
+
+  react:
+    - "Use functional components with hooks"
+    - "Implement proper error boundaries"
+    - "Use React.Suspense for code splitting"
+    - "Implement proper loading states"
+    - "Use proper state management patterns"
+
+  nextjs:
+    - "Use App Router for routing"
+    - "Implement proper metadata"
+    - "Use Server Components by default"
+    - "Use Client Components when needed"
+    - "Implement proper caching strategies"
+
+  tailwind:
+    - "Use consistent color palette"
+    - "Implement proper responsive design"
+    - "Use proper component composition"
+    - "Follow utility-first approach"
+    - "Use proper theme configuration"
+
+testing:
+  setup:
+    - name: "Install Testing Dependencies"
+      command: "npm install -D jest @testing-library/react @testing-library/jest-dom @testing-library/user-event jest-environment-jsdom"
+      description: "Install testing framework and utilities"
+
+  configuration:
+    - "Configure Jest for TypeScript"
+    - "Set up testing environment"
+    - "Configure test coverage thresholds"
+    - "Set up test utilities"
+    - "Configure test runners"
+
+deployment:
+  vercel:
+    - "Configure Vercel deployment"
+    - "Set up environment variables"
+    - "Configure build settings"
+    - "Set up preview deployments"
+    - "Configure custom domains"
+
+  github:
+    - "Set up GitHub Actions"
+    - "Configure CI/CD pipeline"
+    - "Set up automated testing"
+    - "Configure deployment triggers"
+    - "Set up security scanning"
+"""
+        
+        # Write best practices file
+        with open(os.path.join(self.project_dir, 'best_practices.yaml'), 'w') as f:
+            f.write(best_practices)
+        
         # Create a project metadata file
         metadata = {
             'project_name': self.project_name,
@@ -486,6 +687,23 @@ Save the complete documentation to: {os.path.join(self.project_name, 'docs/docum
 
     @after_kickoff
     def after_kickoff(self, crew) -> None:
-        """Clean up after the crew has finished"""
-        print("SDLC process completed for project: " + str(self.project_name))
-        print("Project artifacts available at: " + str(self.project_dir))
+        """Clean up and validate after the crew has finished"""
+        print("\n=== Validating Project Setup ===")
+        if self.validate_project_setup():
+            print("✅ Project setup validation passed")
+        else:
+            print("❌ Project setup validation failed")
+            
+        print("\n=== SDLC Process Summary ===")
+        print("Project: " + str(self.project_name))
+        print("Location: " + str(self.project_dir))
+        
+        # List all generated artifacts
+        print("\nGenerated Artifacts:")
+        for root, dirs, files in os.walk(os.path.join(self.workspace_dir, self.project_name)):
+            level = root.replace(os.path.join(self.workspace_dir, self.project_name), '').count(os.sep)
+            indent = ' ' * 4 * level
+            print(f"{indent}{os.path.basename(root)}/")
+            subindent = ' ' * 4 * (level + 1)
+            for f in files:
+                print(f"{subindent}{f}")
