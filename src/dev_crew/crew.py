@@ -34,26 +34,53 @@ class DevCrew():
         self.requirements = requirements
         self.project_name = project_name or f"project_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
         
-        # Set up workspace directory
-        self.workspace_dir = workspace_dir or os.getenv('DEVCREW_WORKSPACE', os.path.expanduser('~/.devcrew/workspace'))
-        os.makedirs(self.workspace_dir, exist_ok=True)
+        # Set up workspace directory (always absolute)
+        if workspace_dir:
+            self.workspace_dir = os.path.abspath(workspace_dir)
+        else:
+            default_workspace = os.getenv('DEVCREW_WORKSPACE')
+            if default_workspace:
+                self.workspace_dir = os.path.abspath(default_workspace)
+            else:
+                self.workspace_dir = os.path.abspath(os.path.join(os.getcwd(), 'workspace'))
         
-        # Set up project directories
-        self.project_dir = os.path.join(self.workspace_dir, 'projects', self.project_name)
+        # Ensure workspace exists
+        os.makedirs(self.workspace_dir, exist_ok=True)
+        print(f"Using workspace directory: {self.workspace_dir}")
+        
+        # Set up project directories (relative to workspace)
+        self.project_name = project_name or f"project_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        self.project_dir = os.path.join(self.project_name)
         self.docs_dir = os.path.join(self.project_dir, 'docs')
+        self.src_dir = os.path.join(self.project_dir, 'src')
+        
+        # Create core directories (using absolute paths)
+        os.makedirs(os.path.join(self.workspace_dir, self.project_dir), exist_ok=True)
+        os.makedirs(os.path.join(self.workspace_dir, self.docs_dir), exist_ok=True)
+        os.makedirs(os.path.join(self.workspace_dir, self.src_dir), exist_ok=True)
+        
+        # Change to workspace directory
+        os.chdir(self.workspace_dir)
+        
         super().__init__()
 
     def get_docs_dir(self, doc_type: str) -> str:
-        """Generate a directory path for documentation"""
+        """Generate a directory path for documentation relative to workspace"""
         doc_dir = os.path.join(self.docs_dir, doc_type)
         os.makedirs(doc_dir, exist_ok=True)
         return doc_dir
 
     def get_project_dir(self) -> str:
-        """Get the project implementation directory"""
-        src_dir = os.path.join(self.project_dir, 'src')
-        os.makedirs(src_dir, exist_ok=True)
-        return src_dir
+        """Get the project implementation directory relative to workspace"""
+        return self.src_dir
+
+    def get_absolute_path(self, relative_path: str) -> str:
+        """Convert a workspace-relative path to absolute path"""
+        return os.path.join(self.workspace_dir, relative_path)
+
+    def get_relative_path(self, absolute_path: str) -> str:
+        """Convert an absolute path to workspace-relative path"""
+        return os.path.relpath(absolute_path, self.workspace_dir)
 
     @agent
     def project_manager(self) -> Agent:
@@ -125,42 +152,109 @@ class DevCrew():
 
     @task
     def analyze_requirements(self) -> Task:
-        output_file = os.path.join(self.get_docs_dir('requirements'), 'project_plan.md')
+        output_file = 'project_plan.md'
+        output_path = os.path.join(self.get_docs_dir('requirements'), output_file)
         return Task(
             description=f"Analyze the following requirements and create a project plan: {self.requirements}",
             expected_output="A detailed project plan with task breakdown and estimates",
             agent=self.project_manager(),
-            output_file=output_file
+            output_file=output_path,
+            context=[{
+                "description": "Initial project requirements to analyze",
+                "expected_output": "Project plan document",
+                "content": self.requirements,
+                "output_path": os.path.join(self.project_name, 'docs/requirements', output_file)
+            }]
         )
 
     @task
     def design_architecture(self) -> Task:
-        output_file = os.path.join(self.get_docs_dir('architecture'), 'architecture.md')
+        output_file = 'architecture.md'
+        output_path = os.path.join(self.get_docs_dir('architecture'), output_file)
         return Task(
-            description="Based on the project plan from the previous task, create a high-level system architecture",
-            expected_output="System architecture document with technology decisions",
+            description="""Based on the project plan, create a comprehensive system architecture that includes:
+
+1. System Overview
+   - High-level architecture diagram
+   - Key components and their responsibilities
+   - System boundaries and external interfaces
+
+2. Technology Stack
+   - Detailed justification for each technology choice
+   - Version requirements and compatibility considerations
+   - Alternative technologies considered and why they were not chosen
+
+3. Component Architecture
+   - Frontend architecture (React/Next.js structure)
+   - Backend services and APIs
+   - Database design and data models
+   - Authentication and authorization flow
+   - External service integrations
+
+4. Data Flow
+   - Request/response patterns
+   - Data processing pipelines
+   - State management approach
+   - Caching strategy
+
+5. Non-Functional Requirements
+   - Scalability approach
+   - Performance considerations
+   - Security measures
+   - Monitoring and observability
+   - Disaster recovery strategy
+
+6. Infrastructure
+   - Deployment architecture
+   - CI/CD pipeline
+   - Environment configuration
+   - Resource requirements
+
+Follow these guidelines:
+- Use clear diagrams (Mermaid.js format) for visual representation
+- Provide rationale for architectural decisions
+- Address security considerations for each component
+- Include error handling and fallback strategies
+- Consider future scalability and maintenance""",
+            expected_output="""A comprehensive architecture document that includes:
+1. System architecture diagrams
+2. Detailed component specifications
+3. Technology stack decisions with justifications
+4. Security and scalability considerations
+5. Infrastructure requirements""",
             agent=self.architect(),
-            context=[self.analyze_requirements()],
-            output_file=output_file
+            context=[{
+                "description": "Project plan to base architecture on",
+                "expected_output": "Architecture design document",
+                "file": os.path.join(self.project_name, 'docs/requirements/project_plan.md')
+            }],
+            output_file=output_path
         )
 
     @task
     def create_technical_design(self) -> Task:
-        output_file = os.path.join(self.get_docs_dir('technical_design'), 'technical_design.md')
+        output_file = 'technical_design.md'
+        output_path = os.path.join(self.get_docs_dir('technical_design'), output_file)
         return Task(
             description="Based on the architecture design, create detailed technical specifications",
             expected_output="Detailed technical design document with implementation specifications",
             agent=self.architect(),
-            context=[self.design_architecture()],
-            output_file=output_file
+            context=[{
+                "description": "Architecture design to base technical design on",
+                "expected_output": "Technical design document",
+                "file": os.path.join(self.project_name, 'docs/architecture/architecture.md')
+            }],
+            output_file=output_path
         )
 
     @task
     def implement_solution(self) -> Task:
-        output_dir = self.get_project_dir()
-        description = """Based on the technical design, implement the solution:
+        output_file = 'implementation_summary.md'
+        output_path = os.path.join(self.get_docs_dir('implementation'), output_file)
+        return Task(
+            description=f"""Based on the technical design, implement the solution:
 
-1. Read the framework and setup requirements from the technical design
+1. Read the framework and setup requirements from the technical design at: {os.path.join(self.project_name, 'docs/technical_design/technical_design.md')}
 2. Execute the appropriate setup commands from best_practices.yaml
 3. Install required dependencies
 4. Set up project structure and configuration
@@ -176,63 +270,67 @@ Follow these guidelines:
 - Set up appropriate testing infrastructure
 - Configure development tools as needed
 
-Save all implementation artifacts in %(dir)s.
-Document implementation details in the docs/implementation directory.""" % {'dir': output_dir}
-
-        expected_output = """Successfully implemented solution with:
-1. Project scaffolded using specified framework
-2. Required dependencies installed
-3. Project structure set up according to best practices
-4. Testing environment configured
-5. Development tools set up
-
-Implementation documentation available in docs/implementation."""
-
-        return Task(
-            description=description,
-            expected_output=expected_output,
+Save all implementation artifacts in {os.path.join(self.project_name, 'src')}.
+Document implementation details in {os.path.join(self.project_name, 'docs/implementation')}.""",
+            expected_output="Successfully implemented solution with all required components",
             agent=self.senior_fullstack_engineer(),
-            context=[self.create_technical_design()],
-            output_file=os.path.join(self.get_docs_dir('implementation'), 'implementation_summary.md')
+            context=[{
+                "description": "Technical design to implement",
+                "expected_output": "Implementation summary",
+                "file": os.path.join(self.project_name, 'docs/technical_design/technical_design.md')
+            }],
+            output_file=output_path
         )
 
     @task
     def test_solution(self) -> Task:
-        output_dir = self.get_docs_dir('testing')
-        implementation_dir = self.get_project_dir()
+        output_file = 'test_results.md'
+        output_path = os.path.join(self.get_docs_dir('testing'), output_file)
         
-        description = """Test the implemented application in {}. Create and execute:
+        return Task(
+            description=f"""Test the implemented application in {os.path.join(self.project_name, 'src')}. Create and execute:
 1. Unit Tests
 2. Integration Tests
 3. E2E Tests
 4. Test Coverage Analysis
 
-Save all test results and reports in {}.""".format(implementation_dir, output_dir)
-
-        expected_output = """Complete test suite with:
-1. Unit test suite with high coverage
-2. Integration test suite for all major features
-3. E2E tests for critical user journeys
-4. Coverage reports meeting minimum requirements
-5. Comprehensive test documentation"""
-
-        return Task(
-            description=description,
-            expected_output=expected_output,
+Save all test results and reports in {os.path.join(self.project_name, 'docs/testing')}.""",
+            expected_output="Complete test suite with all required components",
             agent=self.qa_engineer(),
-            context=[self.implement_solution()],
-            output_file=os.path.join(output_dir, 'test_results.md')
+            context=[{
+                "description": "Implementation to test",
+                "expected_output": "Test results and coverage report",
+                "src_dir": os.path.join(self.project_name, 'src'),
+                "implementation_docs": os.path.join(self.project_name, 'docs/implementation/implementation_summary.md')
+            }],
+            output_file=output_path
         )
 
     @task
     def create_documentation(self) -> Task:
-        output_file = os.path.join(self.get_docs_dir('documentation'), 'README.md')
+        output_file = 'README.md'
+        output_path = os.path.join(self.get_docs_dir('documentation'), output_file)
         return Task(
-            description="Create comprehensive documentation for the solution",
+            description=f"""Create comprehensive documentation for the solution. Reference:
+1. Project Plan: {os.path.join(self.project_name, 'docs/requirements/project_plan.md')}
+2. Architecture: {os.path.join(self.project_name, 'docs/architecture/architecture.md')}
+3. Technical Design: {os.path.join(self.project_name, 'docs/technical_design/technical_design.md')}
+4. Implementation: {os.path.join(self.project_name, 'docs/implementation/implementation_summary.md')}
+5. Test Results: {os.path.join(self.project_name, 'docs/testing/test_results.md')}""",
             expected_output="Complete technical documentation",
             agent=self.technical_writer(),
-            context=[self.implement_solution(), self.test_solution()],
-            output_file=output_file
+            context=[{
+                "description": "Project documentation to compile",
+                "expected_output": "Complete README documentation",
+                "files": {
+                    "project_plan": os.path.join(self.project_name, 'docs/requirements/project_plan.md'),
+                    "architecture": os.path.join(self.project_name, 'docs/architecture/architecture.md'),
+                    "technical_design": os.path.join(self.project_name, 'docs/technical_design/technical_design.md'),
+                    "implementation": os.path.join(self.project_name, 'docs/implementation/implementation_summary.md'),
+                    "test_results": os.path.join(self.project_name, 'docs/testing/test_results.md')
+                }
+            }],
+            output_file=output_path
         )
 
     @crew
