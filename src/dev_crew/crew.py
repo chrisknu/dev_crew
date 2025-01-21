@@ -170,9 +170,12 @@ class DevCrew():
     @task
     def design_architecture(self) -> Task:
         output_file = 'architecture.md'
+        input_file = os.path.join(self.project_name, 'docs/requirements/project_plan.md')
         output_path = os.path.join(self.get_docs_dir('architecture'), output_file)
         return Task(
-            description="""Based on the project plan, create a comprehensive system architecture that includes:
+            description=f"""First, read and analyze the project plan from: {input_file}
+
+Then, based on the project plan requirements, create a comprehensive system architecture that includes:
 
 1. System Overview
    - High-level architecture diagram
@@ -215,7 +218,9 @@ Follow these guidelines:
 - Provide rationale for architectural decisions
 - Address security considerations for each component
 - Include error handling and fallback strategies
-- Consider future scalability and maintenance""",
+- Consider future scalability and maintenance
+
+Save the architecture document to: {os.path.join(self.project_name, 'docs/architecture', output_file)}""",
             expected_output="""A comprehensive architecture document that includes:
 1. System architecture diagrams
 2. Detailed component specifications
@@ -226,7 +231,7 @@ Follow these guidelines:
             context=[{
                 "description": "Project plan to base architecture on",
                 "expected_output": "Architecture design document",
-                "file": os.path.join(self.project_name, 'docs/requirements/project_plan.md')
+                "file": input_file
             }],
             output_file=output_path
         )
@@ -234,15 +239,45 @@ Follow these guidelines:
     @task
     def create_technical_design(self) -> Task:
         output_file = 'technical_design.md'
+        input_file = os.path.join(self.project_name, 'docs/architecture/architecture.md')
         output_path = os.path.join(self.get_docs_dir('technical_design'), output_file)
         return Task(
-            description="Based on the architecture design, create detailed technical specifications",
-            expected_output="Detailed technical design document with implementation specifications",
+            description=f"""First, read and analyze the architecture document from: {input_file}
+
+Then, create a detailed technical design that specifies:
+
+1. Component Implementation Details
+   - Frontend component hierarchy and state management
+   - API endpoint specifications
+   - Database schema and migrations
+   - Authentication implementation details
+   - Service integration specifications
+
+2. Development Standards
+   - Coding conventions
+   - Testing requirements
+   - Documentation standards
+   - Error handling patterns
+   - Logging standards
+
+3. Technical Requirements
+   - Development environment setup
+   - Required dependencies and versions
+   - Build and deployment procedures
+   - Testing framework configuration
+   - CI/CD pipeline specifications
+
+Save the technical design document to: {os.path.join(self.project_name, 'docs/technical_design', output_file)}""",
+            expected_output="""A detailed technical design document that includes:
+1. Component implementation specifications
+2. Development standards and patterns
+3. Technical requirements and configurations
+4. Testing and deployment procedures""",
             agent=self.architect(),
             context=[{
                 "description": "Architecture design to base technical design on",
                 "expected_output": "Technical design document",
-                "file": os.path.join(self.project_name, 'docs/architecture/architecture.md')
+                "file": input_file
             }],
             output_file=output_path
         )
@@ -250,34 +285,48 @@ Follow these guidelines:
     @task
     def implement_solution(self) -> Task:
         output_file = 'implementation_summary.md'
+        input_file = os.path.join(self.project_name, 'docs/technical_design/technical_design.md')
         output_path = os.path.join(self.get_docs_dir('implementation'), output_file)
         return Task(
-            description=f"""Based on the technical design, implement the solution:
+            description=f"""First, read and analyze the technical design document from: {input_file}
 
-1. Read the framework and setup requirements from the technical design at: {os.path.join(self.project_name, 'docs/technical_design/technical_design.md')}
-2. Execute the appropriate setup commands from best_practices.yaml
-3. Install required dependencies
-4. Set up project structure and configuration
-5. Implement core functionality
-6. Set up testing infrastructure
-7. Configure development tools
+Then, implement the solution following these steps:
 
-Follow these guidelines:
-- Use the framework-specific setup commands from best_practices.yaml
-- Install only the dependencies required for the chosen framework
-- Follow the framework's best practices for project structure
-- Implement proper error handling and logging
-- Set up appropriate testing infrastructure
-- Configure development tools as needed
+1. Project Setup
+   - Initialize the Next.js project with TypeScript and TailwindCSS
+   - Set up the project structure according to the technical design
+   - Configure development tools and linters
 
-Save all implementation artifacts in {os.path.join(self.project_name, 'src')}.
-Document implementation details in {os.path.join(self.project_name, 'docs/implementation')}.""",
-            expected_output="Successfully implemented solution with all required components",
+2. Core Implementation
+   - Implement the frontend components and pages
+   - Set up the API routes and services
+   - Configure database connections and models
+   - Implement authentication and authorization
+   - Set up state management
+
+3. Testing Setup
+   - Configure Jest and Testing Library
+   - Set up test environment
+   - Create initial test suites
+
+4. Build and Deployment
+   - Configure build process
+   - Set up CI/CD pipeline
+   - Configure deployment environments
+
+Save all implementation artifacts in: {os.path.join(self.project_name, 'src')}
+Document the implementation details in: {os.path.join(self.project_name, 'docs/implementation', output_file)}""",
+            expected_output="""Implementation completed with:
+1. Project structure and configuration
+2. Core functionality implementation
+3. Testing infrastructure
+4. Build and deployment setup
+5. Implementation documentation""",
             agent=self.senior_fullstack_engineer(),
             context=[{
                 "description": "Technical design to implement",
                 "expected_output": "Implementation summary",
-                "file": os.path.join(self.project_name, 'docs/technical_design/technical_design.md')
+                "file": input_file
             }],
             output_file=output_path
         )
@@ -285,23 +334,51 @@ Document implementation details in {os.path.join(self.project_name, 'docs/implem
     @task
     def test_solution(self) -> Task:
         output_file = 'test_results.md'
+        input_dir = os.path.join(self.project_name, 'src')
+        input_docs = os.path.join(self.project_name, 'docs/implementation/implementation_summary.md')
         output_path = os.path.join(self.get_docs_dir('testing'), output_file)
         
         return Task(
-            description=f"""Test the implemented application in {os.path.join(self.project_name, 'src')}. Create and execute:
-1. Unit Tests
-2. Integration Tests
-3. E2E Tests
-4. Test Coverage Analysis
+            description=f"""First, review the implementation details from: {input_docs}
+Then, test the implemented application in: {input_dir}
 
-Save all test results and reports in {os.path.join(self.project_name, 'docs/testing')}.""",
-            expected_output="Complete test suite with all required components",
+Create and execute the following test suites:
+
+1. Unit Tests
+   - Component tests
+   - Utility function tests
+   - API endpoint tests
+   - Database operation tests
+
+2. Integration Tests
+   - API integration tests
+   - Database integration tests
+   - Authentication flow tests
+   - State management tests
+
+3. End-to-End Tests
+   - Critical user journeys
+   - Error handling scenarios
+   - Edge cases
+
+4. Performance Tests
+   - Load testing
+   - API response times
+   - Client-side performance
+
+Generate test coverage reports and save all test results in: {os.path.join(self.project_name, 'docs/testing', output_file)}""",
+            expected_output="""Complete test suite with:
+1. Unit test results
+2. Integration test results
+3. E2E test results
+4. Performance test results
+5. Coverage reports""",
             agent=self.qa_engineer(),
             context=[{
                 "description": "Implementation to test",
                 "expected_output": "Test results and coverage report",
-                "src_dir": os.path.join(self.project_name, 'src'),
-                "implementation_docs": os.path.join(self.project_name, 'docs/implementation/implementation_summary.md')
+                "src_dir": input_dir,
+                "implementation_docs": input_docs
             }],
             output_file=output_path
         )
@@ -310,25 +387,58 @@ Save all test results and reports in {os.path.join(self.project_name, 'docs/test
     def create_documentation(self) -> Task:
         output_file = 'README.md'
         output_path = os.path.join(self.get_docs_dir('documentation'), output_file)
+        input_files = {
+            "project_plan": os.path.join(self.project_name, 'docs/requirements/project_plan.md'),
+            "architecture": os.path.join(self.project_name, 'docs/architecture/architecture.md'),
+            "technical_design": os.path.join(self.project_name, 'docs/technical_design/technical_design.md'),
+            "implementation": os.path.join(self.project_name, 'docs/implementation/implementation_summary.md'),
+            "test_results": os.path.join(self.project_name, 'docs/testing/test_results.md')
+        }
         return Task(
-            description=f"""Create comprehensive documentation for the solution. Reference:
-1. Project Plan: {os.path.join(self.project_name, 'docs/requirements/project_plan.md')}
-2. Architecture: {os.path.join(self.project_name, 'docs/architecture/architecture.md')}
-3. Technical Design: {os.path.join(self.project_name, 'docs/technical_design/technical_design.md')}
-4. Implementation: {os.path.join(self.project_name, 'docs/implementation/implementation_summary.md')}
-5. Test Results: {os.path.join(self.project_name, 'docs/testing/test_results.md')}""",
-            expected_output="Complete technical documentation",
+            description=f"""Create comprehensive documentation by reviewing and synthesizing:
+
+1. Project Overview
+   - Project Plan: {input_files['project_plan']}
+   - Key Features and Requirements
+   - Project Timeline and Milestones
+
+2. Technical Documentation
+   - Architecture Overview: {input_files['architecture']}
+   - Technical Design Details: {input_files['technical_design']}
+   - Implementation Notes: {input_files['implementation']}
+   - Test Results and Coverage: {input_files['test_results']}
+
+3. User Documentation
+   - Installation Instructions
+   - Configuration Guide
+   - Usage Examples
+   - API Documentation
+
+4. Development Guide
+   - Setup Instructions
+   - Development Workflow
+   - Testing Procedures
+   - Deployment Process
+
+5. Maintenance Guide
+   - Troubleshooting
+   - Monitoring
+   - Backup and Recovery
+   - Security Considerations
+
+Save the complete documentation to: {os.path.join(self.project_name, 'docs/documentation', output_file)}""",
+            expected_output="""Complete documentation including:
+1. Project overview and requirements
+2. Technical architecture and design
+3. Implementation details
+4. Testing results
+5. User and developer guides
+6. Maintenance procedures""",
             agent=self.technical_writer(),
             context=[{
                 "description": "Project documentation to compile",
                 "expected_output": "Complete README documentation",
-                "files": {
-                    "project_plan": os.path.join(self.project_name, 'docs/requirements/project_plan.md'),
-                    "architecture": os.path.join(self.project_name, 'docs/architecture/architecture.md'),
-                    "technical_design": os.path.join(self.project_name, 'docs/technical_design/technical_design.md'),
-                    "implementation": os.path.join(self.project_name, 'docs/implementation/implementation_summary.md'),
-                    "test_results": os.path.join(self.project_name, 'docs/testing/test_results.md')
-                }
+                "files": input_files
             }],
             output_file=output_path
         )
