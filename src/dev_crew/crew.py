@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 import os
 from datetime import datetime
 from .tools.shell_tool import ShellTool
+from .tools.framework_tool import FrameworkTool
 
 # Load environment variables
 load_dotenv()
@@ -28,18 +29,31 @@ shell_tool = ShellTool()
 class DevCrew():
     """Software Development Lifecycle Crew"""
     
-    def __init__(self, requirements: str, project_name: str = None):
+    def __init__(self, requirements: str, project_name: str = None, workspace_dir: str = None):
         """Initialize the crew with requirements and optional project name"""
         self.requirements = requirements
         self.project_name = project_name or f"project_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-        self.project_dir = os.path.join('projects', self.project_name)
+        
+        # Set up workspace directory
+        self.workspace_dir = workspace_dir or os.getenv('DEVCREW_WORKSPACE', os.path.expanduser('~/.devcrew/workspace'))
+        os.makedirs(self.workspace_dir, exist_ok=True)
+        
+        # Set up project directories
+        self.project_dir = os.path.join(self.workspace_dir, 'projects', self.project_name)
+        self.docs_dir = os.path.join(self.project_dir, 'docs')
         super().__init__()
 
-    def get_task_dir(self, task_name: str) -> str:
-        """Generate a directory path for a task"""
-        task_dir = os.path.join(self.project_dir, task_name)
-        os.makedirs(task_dir, exist_ok=True)
-        return task_dir
+    def get_docs_dir(self, doc_type: str) -> str:
+        """Generate a directory path for documentation"""
+        doc_dir = os.path.join(self.docs_dir, doc_type)
+        os.makedirs(doc_dir, exist_ok=True)
+        return doc_dir
+
+    def get_project_dir(self) -> str:
+        """Get the project implementation directory"""
+        src_dir = os.path.join(self.project_dir, 'src')
+        os.makedirs(src_dir, exist_ok=True)
+        return src_dir
 
     @agent
     def project_manager(self) -> Agent:
@@ -71,11 +85,17 @@ class DevCrew():
         return Agent(
             role="Senior Full Stack Engineer",
             goal="Implement high-quality, production-ready code following best practices",
-            backstory="Experienced full stack developer with expertise in Next.js, React, and TypeScript",
+            backstory="Experienced full stack developer with expertise in modern web development",
             verbose=True,
             allow_delegation=True,
             allow_code_execution=True,
-            tools=[serper_tool, file_read_tool, file_writer_tool, shell_tool]
+            tools=[
+                serper_tool,
+                file_read_tool,
+                file_writer_tool,
+                shell_tool,
+                FrameworkTool()
+            ]
         )
 
     @agent
@@ -105,7 +125,7 @@ class DevCrew():
 
     @task
     def analyze_requirements(self) -> Task:
-        output_file = os.path.join(self.get_task_dir('requirements'), 'project_plan.md')
+        output_file = os.path.join(self.get_docs_dir('requirements'), 'project_plan.md')
         return Task(
             description=f"Analyze the following requirements and create a project plan: {self.requirements}",
             expected_output="A detailed project plan with task breakdown and estimates",
@@ -115,7 +135,7 @@ class DevCrew():
 
     @task
     def design_architecture(self) -> Task:
-        output_file = os.path.join(self.get_task_dir('architecture'), 'architecture.md')
+        output_file = os.path.join(self.get_docs_dir('architecture'), 'architecture.md')
         return Task(
             description="Based on the project plan from the previous task, create a high-level system architecture",
             expected_output="System architecture document with technology decisions",
@@ -126,7 +146,7 @@ class DevCrew():
 
     @task
     def create_technical_design(self) -> Task:
-        output_file = os.path.join(self.get_task_dir('technical_design'), 'technical_design.md')
+        output_file = os.path.join(self.get_docs_dir('technical_design'), 'technical_design.md')
         return Task(
             description="Based on the architecture design, create detailed technical specifications",
             expected_output="Detailed technical design document with implementation specifications",
@@ -137,124 +157,57 @@ class DevCrew():
 
     @task
     def implement_solution(self) -> Task:
-        output_dir = self.get_task_dir('implementation')
-        description = """Execute these commands in sequence to set up the Next.js application:
+        output_dir = self.get_project_dir()
+        description = """Based on the technical design, implement the solution:
 
-# Command 1: Initialize Next.js project
-execute_command: pnpm dlx create-next-app@latest . --ts --tailwind --eslint --app --src-dir --import-alias "@/*" --use-pnpm --yes
-working_directory: %(dir)s
+1. Read the framework and setup requirements from the technical design
+2. Execute the appropriate setup commands from best_practices.yaml
+3. Install required dependencies
+4. Set up project structure and configuration
+5. Implement core functionality
+6. Set up testing infrastructure
+7. Configure development tools
 
-# Command 2: Install core dependencies
-execute_command: pnpm add @supabase/supabase-js @supabase/auth-helpers-nextjs drizzle-orm @neondatabase/serverless --yes
-working_directory: %(dir)s
+Follow these guidelines:
+- Use the framework-specific setup commands from best_practices.yaml
+- Install only the dependencies required for the chosen framework
+- Follow the framework's best practices for project structure
+- Implement proper error handling and logging
+- Set up appropriate testing infrastructure
+- Configure development tools as needed
 
-# Command 3: Install dev dependencies
-execute_command: pnpm add -D drizzle-kit @graphql-codegen/cli @graphql-codegen/typescript --yes
-working_directory: %(dir)s
+Save all implementation artifacts in %(dir)s.
+Document implementation details in the docs/implementation directory.""" % {'dir': output_dir}
 
-# Command 4: Install GraphQL dependencies
-execute_command: pnpm add @graphql-yoga/node graphql --yes
-working_directory: %(dir)s
+        expected_output = """Successfully implemented solution with:
+1. Project scaffolded using specified framework
+2. Required dependencies installed
+3. Project structure set up according to best practices
+4. Testing environment configured
+5. Development tools set up
 
-# Command 5: Install and setup UI components
-execute_command: pnpm add @shadcn/ui --yes && pnpm dlx shadcn@latest init --yes
-working_directory: %(dir)s
-
-# Command 6: Add common UI components
-execute_command: pnpm dlx shadcn@latest add button card form input --yes
-working_directory: %(dir)s
-
-# Command 7: Setup testing dependencies
-execute_command: pnpm add -D jest @testing-library/react @testing-library/jest-dom @types/jest jest-environment-jsdom --yes
-working_directory: %(dir)s
-
-# Command 8: Create test directory structure
-execute_command: mkdir -p src/__tests__/components src/__tests__/lib src/__tests__/app
-working_directory: %(dir)s
-
-# Command 9: Create Jest config
-execute_command: echo 'const nextJest = require("next/jest");const createJestConfig = nextJest({dir: "./"});const customJestConfig = {testEnvironment: "jest-environment-jsdom",setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],testMatch: ["**/__tests__/**/*.test.ts?(x)"]};module.exports = createJestConfig(customJestConfig);' > jest.config.js
-working_directory: %(dir)s
-
-# Command 10: Create Jest setup
-execute_command: echo 'import "@testing-library/jest-dom";' > jest.setup.js
-working_directory: %(dir)s
-
-# Command 11: Create example component test
-execute_command: echo 'import { render, screen } from "@testing-library/react";import { Button } from "@/components/ui/button";describe("Button", () => {it("renders correctly", () => {render(<Button>Test Button</Button>);expect(screen.getByText("Test Button")).toBeInTheDocument();});});' > src/__tests__/components/button.test.tsx
-working_directory: %(dir)s
-
-# Command 12: Create example page test
-execute_command: echo 'import { render, screen } from "@testing-library/react";import Page from "@/app/page";describe("Home Page", () => {it("renders correctly", () => {render(<Page />);expect(screen.getByRole("main")).toBeInTheDocument();});});' > src/__tests__/app/page.test.tsx
-working_directory: %(dir)s
-
-# Command 13: Add test scripts to package.json
-execute_command: npm pkg set scripts.test="jest" scripts.test:watch="jest --watch" scripts.test:coverage="jest --coverage"
-working_directory: %(dir)s
-
-After each command completes successfully, proceed to the next one.
-If any command fails, report the error and stop execution.
-
-After all commands complete successfully:
-1. Configure Supabase and environment variables
-2. Set up GraphQL schema and resolvers
-3. Create Drizzle schema and migrations
-4. Implement auth middleware and components
-5. Set up server-side components and routes""" % {'dir': output_dir}
-
-        expected_output = """Successfully created Next.js application in %(dir)s with:
-1. Project scaffolded using create-next-app
-2. All dependencies installed
-3. UI components set up with shadcn/ui
-4. Testing environment configured with example tests in src/__tests__/
-
-Verify each command's output in the implementation directory.""" % {'dir': output_dir}
+Implementation documentation available in docs/implementation."""
 
         return Task(
             description=description,
             expected_output=expected_output,
             agent=self.senior_fullstack_engineer(),
             context=[self.create_technical_design()],
-            output_file=os.path.join(output_dir, 'implementation_summary.md')
+            output_file=os.path.join(self.get_docs_dir('implementation'), 'implementation_summary.md')
         )
 
     @task
     def test_solution(self) -> Task:
-        output_dir = self.get_task_dir('testing')
-        implementation_dir = self.get_task_dir('implementation')
+        output_dir = self.get_docs_dir('testing')
+        implementation_dir = self.get_project_dir()
         
-        description = """Test the implemented Next.js application in {}. Create and execute:
-1. Unit Tests:
-- Component tests using React Testing Library
-- API route handler tests
-- Utility function tests
-- Authentication flow tests
-- Database operation tests
-2. Integration Tests:
-- API endpoint integration tests
-- Database integration tests
-- Authentication flow integration
-- Component integration tests
-3. E2E Tests:
-- User journey tests
-- Authentication flows
-- Critical business flows
-- Error handling scenarios
-4. Test Coverage:
-- Generate and analyze coverage reports
-- Ensure minimum 80% coverage
-- Document areas needing additional coverage
-Save all test results and reports in {}. Ensure all tests are:
-- Properly typed with TypeScript
-- Following testing best practices
-- Using appropriate mocking strategies
-- Including proper error case coverage
-Create a comprehensive test report documenting:
-- Test strategy and approach
-- Test results and metrics
-- Coverage analysis
-- Identified issues
-- Recommendations for improvements""".format(implementation_dir, output_dir)
+        description = """Test the implemented application in {}. Create and execute:
+1. Unit Tests
+2. Integration Tests
+3. E2E Tests
+4. Test Coverage Analysis
+
+Save all test results and reports in {}.""".format(implementation_dir, output_dir)
 
         expected_output = """Complete test suite with:
 1. Unit test suite with high coverage
@@ -268,13 +221,12 @@ Create a comprehensive test report documenting:
             expected_output=expected_output,
             agent=self.qa_engineer(),
             context=[self.implement_solution()],
-            output_file=os.path.join(output_dir, 'test_results.md'),
-            tools=[file_read_tool, file_writer_tool]
+            output_file=os.path.join(output_dir, 'test_results.md')
         )
 
     @task
     def create_documentation(self) -> Task:
-        output_file = os.path.join(self.get_task_dir('documentation'), 'documentation.md')
+        output_file = os.path.join(self.get_docs_dir('documentation'), 'README.md')
         return Task(
             description="Create comprehensive documentation for the solution",
             expected_output="Complete technical documentation",
@@ -306,8 +258,9 @@ Create a comprehensive test report documenting:
         print("Starting SDLC process for project: " + str(self.project_name))
         print("Requirements: " + str(self.requirements))
         
-        # Create project directory structure
+        # Create project and docs directory structure
         os.makedirs(self.project_dir, exist_ok=True)
+        os.makedirs(self.docs_dir, exist_ok=True)
         
         # Create a project metadata file
         metadata = {
@@ -316,7 +269,7 @@ Create a comprehensive test report documenting:
             'requirements': self.requirements
         }
         
-        with open(os.path.join(self.project_dir, 'project_metadata.md'), 'w') as f:
+        with open(os.path.join(self.docs_dir, 'metadata.md'), 'w') as f:
             f.write("# Project Metadata\n\n")
             for key, value in metadata.items():
                 title = key.replace('_', ' ').title()

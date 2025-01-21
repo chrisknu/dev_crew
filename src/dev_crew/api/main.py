@@ -168,9 +168,15 @@ async def get_project_artifact(project_id: str, artifact_path: str):
     if project["status"] != "completed":
         raise HTTPException(status_code=400, detail="Project artifacts not ready")
     
+    # Try project artifacts first
     full_path = os.path.join(project["artifacts_path"], artifact_path)
     if not os.path.exists(full_path):
-        raise HTTPException(status_code=404, detail="Artifact not found")
+        # Try docs directory
+        docs_path = os.path.join('docs', project_id, artifact_path)
+        if os.path.exists(docs_path):
+            full_path = docs_path
+        else:
+            raise HTTPException(status_code=404, detail="Artifact not found")
     
     try:
         with open(full_path, 'r') as f:
@@ -179,6 +185,55 @@ async def get_project_artifact(project_id: str, artifact_path: str):
     except Exception as e:
         logger.error(f"Error reading artifact {full_path}: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail="Error reading artifact")
+
+@app.get("/projects/{project_id}/docs/{doc_path:path}")
+async def get_project_docs(project_id: str, doc_path: str):
+    if project_id not in projects:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    project = projects[project_id]
+    if project["status"] != "completed":
+        raise HTTPException(status_code=400, detail="Project documentation not ready")
+    
+    docs_path = os.path.join(project["artifacts_path"], 'docs', doc_path)
+    if not os.path.exists(docs_path):
+        raise HTTPException(status_code=404, detail="Documentation not found")
+    
+    try:
+        with open(docs_path, 'r') as f:
+            content = f.read()
+        return {"content": content}
+    except Exception as e:
+        logger.error(f"Error reading documentation {docs_path}: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Error reading documentation")
+
+@app.get("/projects/{project_id}/docs")
+async def list_project_docs(project_id: str):
+    if project_id not in projects:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    project = projects[project_id]
+    if project["status"] != "completed":
+        raise HTTPException(status_code=400, detail="Project documentation not ready")
+    
+    docs_dir = os.path.join(project["artifacts_path"], 'docs')
+    if not os.path.exists(docs_dir):
+        return {"docs": []}
+    
+    try:
+        docs = []
+        for root, _, files in os.walk(docs_dir):
+            for file in files:
+                if file.endswith('.md'):
+                    rel_path = os.path.relpath(os.path.join(root, file), docs_dir)
+                    docs.append({
+                        "path": rel_path,
+                        "type": os.path.basename(os.path.dirname(os.path.join(root, file)))
+                    })
+        return {"docs": docs}
+    except Exception as e:
+        logger.error(f"Error listing documentation for project {project_id}: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Error listing documentation")
 
 @app.get("/projects/")
 async def list_projects():
@@ -196,8 +251,9 @@ async def list_projects():
 
 @app.get("/health")
 async def health_check():
-    """Health check endpoint for container orchestration"""
+    """Health check endpoint for monitoring"""
     return {
         "status": "healthy",
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(),
+        "version": "1.0.0"
     } 

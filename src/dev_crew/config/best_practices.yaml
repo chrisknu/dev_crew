@@ -1,0 +1,125 @@
+frameworks:
+  nextjs:
+    setup:
+      - command: "pnpm dlx create-next-app@latest . --ts --tailwind --eslint --app --src-dir --import-alias '@/*' --use-pnpm --yes"
+        description: "Initialize Next.js project with TypeScript, Tailwind, ESLint, and App Router"
+    dependencies:
+      core:
+        - "@supabase/supabase-js"
+        - "@supabase/auth-helpers-nextjs"
+        - "drizzle-orm"
+        - "@neondatabase/serverless"
+      dev:
+        - "drizzle-kit"
+        - "@graphql-codegen/cli"
+        - "@graphql-codegen/typescript"
+      ui:
+        - "@shadcn/ui"
+      testing:
+        - "jest"
+        - "@testing-library/react"
+        - "@testing-library/jest-dom"
+        - "@types/jest"
+        - "jest-environment-jsdom"
+
+  fastapi:
+    setup:
+      - command: "pip install fastapi uvicorn[standard]"
+        description: "Install FastAPI and Uvicorn server"
+    dependencies:
+      core:
+        - "pydantic"
+        - "sqlalchemy"
+        - "alembic"
+        - "python-jose[cryptography]"
+        - "passlib[bcrypt]"
+      dev:
+        - "pytest"
+        - "pytest-cov"
+        - "black"
+        - "isort"
+        - "mypy"
+      database:
+        - "asyncpg"
+        - "psycopg2-binary"
+
+patterns:
+  authentication:
+    nextjs:
+      providers:
+        - name: "Supabase"
+          setup:
+            - "Install @supabase/auth-helpers-nextjs"
+            - "Configure environment variables"
+            - "Set up middleware"
+            - "Create auth components"
+        - name: "NextAuth.js"
+          setup:
+            - "Install next-auth"
+            - "Configure API routes"
+            - "Set up providers"
+    fastapi:
+      providers:
+        - name: "JWT"
+          setup:
+            - "Install python-jose[cryptography]"
+            - "Set up JWT handling"
+            - "Create auth middleware"
+        - name: "OAuth2"
+          setup:
+            - "Use FastAPI's built-in OAuth2"
+            - "Configure password flow"
+
+  database:
+    orm:
+      - name: "Drizzle"
+        language: "typescript"
+        setup:
+          - "Install drizzle-orm and database driver"
+          - "Create schema definitions"
+          - "Set up migrations"
+      - name: "SQLAlchemy"
+        language: "python"
+        setup:
+          - "Install SQLAlchemy and database driver"
+          - "Define models"
+          - "Configure Alembic migrations"
+
+  testing:
+    frontend:
+      - framework: "Jest + React Testing Library"
+        setup:
+          - "Install testing dependencies"
+          - "Configure Jest"
+          - "Create test directory structure"
+          - "Set up test utilities"
+    backend:
+      - framework: "pytest"
+        setup:
+          - "Install pytest and plugins"
+          - "Create conftest.py"
+          - "Set up fixtures"
+          - "Configure coverage"
+
+  api:
+    rest:
+      - "Use consistent endpoint naming"
+      - "Implement proper status codes"
+      - "Include error handling"
+      - "Add request validation"
+      - "Document with OpenAPI/Swagger"
+    graphql:
+      - "Define schema first"
+      - "Implement resolvers"
+      - "Add type generation"
+      - "Set up caching"
+
+  security:
+    - "Use environment variables for secrets"
+    - "Implement CORS properly"
+    - "Add rate limiting"
+    - "Set security headers"
+    - "Validate input data"
+    - "Use HTTPS"
+    - "Implement proper authentication"
+    - "Add request validation"

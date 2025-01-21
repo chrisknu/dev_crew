@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 import sys
 import warnings
-
-
+import os
 from dev_crew.crew import DevCrew
 
 warnings.filterwarnings("ignore", category=SyntaxWarning, module="pysbd")
@@ -29,7 +28,10 @@ def main():
     """)
 
     # Initialize the development crew with the requirements
-    dev_crew = DevCrew(requirements=requirements)
+    dev_crew = DevCrew(
+        requirements=requirements,
+        workspace_dir=os.getenv('DEVCREW_WORKSPACE')
+    )
 
     # Start the SDLC process
     result = dev_crew.crew().kickoff()
@@ -63,7 +65,8 @@ def run():
     # Initialize and run the SDLC crew
     dev_crew = DevCrew(
         requirements=requirements,
-        project_name="web_app_project"
+        project_name="web_app_project",
+        workspace_dir=os.getenv('DEVCREW_WORKSPACE')
     )
     
     # Start the SDLC process
@@ -83,7 +86,10 @@ def train():
     """
     requirements = "Training run for web application development"
     try:
-        DevCrew(requirements=requirements).crew().train(
+        DevCrew(
+            requirements=requirements,
+            workspace_dir=os.getenv('DEVCREW_WORKSPACE')
+        ).crew().train(
             n_iterations=int(sys.argv[1]), 
             filename=sys.argv[2]
         )
@@ -97,7 +103,10 @@ def replay():
     """
     requirements = "Replay run for web application development"
     try:
-        DevCrew(requirements=requirements).crew().replay(task_id=sys.argv[1])
+        DevCrew(
+            requirements=requirements,
+            workspace_dir=os.getenv('DEVCREW_WORKSPACE')
+        ).crew().replay(task_id=sys.argv[1])
 
     except Exception as e:
         raise Exception(f"An error occurred while replaying the crew: {e}")
@@ -108,7 +117,10 @@ def test():
     """
     requirements = "Test run for web application development"
     try:
-        DevCrew(requirements=requirements).crew().test(
+        DevCrew(
+            requirements=requirements,
+            workspace_dir=os.getenv('DEVCREW_WORKSPACE')
+        ).crew().test(
             n_iterations=int(sys.argv[1]), 
             openai_model_name=sys.argv[2]
         )

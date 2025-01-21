@@ -57,12 +57,12 @@ technical_design:
 implementation:
   description: >
     Implement the solution according to the approved architecture and technical design.
-    Follow established coding standards and best practices.
+    Follow established coding standards and best practices for the chosen framework.
   expected_output: >
     - Working code implementation meeting requirements
     - Unit tests and integration tests
     - API documentation
-    - Database migrations
+    - Database setup and migrations
     - Deployment configurations
     - Clean, maintainable code structure
   agent: senior_fullstack_engineer
@@ -70,11 +70,10 @@ implementation:
   validation:
     - type: file_exists
       files:
-        - package.json
-        - tsconfig.json
-        - app/layout.tsx
+        - README.md
+        - .gitignore
     - type: command_succeeds
-      command: npm run build
+      command: ${BUILD_COMMAND}
 
 quality_assurance:
   description: >

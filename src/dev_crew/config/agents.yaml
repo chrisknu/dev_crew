@@ -17,8 +17,8 @@ architect:
 
 senior_fullstack_engineer:
   role: Senior Full Stack Engineer
-  goal: Implement high-quality, production-ready code following best practices
-  backstory: Experienced full stack developer with expertise in Next.js, React, TypeScript, and modern web development practices
+  goal: Implement high-quality, production-ready code following best practices and chosen framework guidelines
+  backstory: Experienced full stack developer with expertise in modern web development practices, multiple frameworks, and scalable architectures
   allow_code_execution: true
   allow_file_operations: true
 
