@@ -1,114 +1,86 @@
 ```
-# System Architecture Document for Modern Web Application
+# System Architecture Document
 
-## 1. System Overview
+## 1. System Overview  
+The proposed system is a modern web application intended to serve a diverse range of users with various functionalities centered around user engagement and data management. The application will utilize a responsive design, ensuring compatibility across desktop and mobile devices, leveraging best practices for user experience and performance.
 
-### High-level architecture diagram
+## 2. Technology Stack  
+- **Frontend:**  
+  - Next.js for server-side rendering and static site generation  
+  - TailwindCSS for styling and rapid UI development
+
+- **Backend:**  
+  - Supabase for real-time database management, providing authentication and storage capabilities.
+  - PostgreSQL as the database to handle complex queries and data integrity.
+  - GraphQL to provide a flexible and efficient way to query data.
+
+### Justification for Technology Choices  
+1. **Next.js**: Chosen for its efficient rendering capabilities, optimized performance, and SEO-friendly structure.
+2. **Supabase**: Selected for its ease of use and rapid integration for authentication and database management.
+3. **PostgreSQL**: Provides powerful features such as ACID compliance and supports complex query requirements.
+4. **GraphQL**: Allows clients to request only the data they need, reducing over-fetching and improving performance.
+
+### Version Requirements and Compatibility  
+- Next.js v15  
+- Supabase version compatible with PostgreSQL v14  
+- Ensure that libraries used for GraphQL are up-to-date with the latest specifications for REST integration.
+
+### Alternatives Considered  
+- **Firebase**: Considered for its simplicity but discarded due to vendor lock-in concerns. 
+- **Redux**: Evaluated for state management but chose to use React's built-in context API to maintain simplicity.
+
+## 3. Component Architecture  
+The system will consist of several key components, each interacting with one another:
+- **Frontend (Next.js):**  
+  - Pages: Home, Profile, Dashboard, etc.  
+  - Components: Reusable UI components with TailwindCSS styles.  
+  - API calls to the backend to fetch or manipulate data via GraphQL queries.
+
+- **Backend (Supabase & PostgreSQL):**  
+  - Authentication module: Manages user sign-up, login, and session storage.  
+  - Database schema: Designed to optimize queries and ensure data integrity.  
+  - REST/GraphQL API: Interfaces that fulfill frontend requests.
+
+### Component Interaction Diagram  
 ```mermaid
 graph TD;
-    A[Client] -->|Requests| B[Next.js Application];
-    B -->|Fetch Authentication| C[Supabase Auth];
-    B -->|Fetch Data| D[GraphQL API];
-    D -->|Interacts with| E[PostgreSQL Database];
-    D -->|Handles| F[REST Fallback];
-    B -->|Styling| G[TailwindCSS];
+    A[Frontend (Next.js)] -->|API Calls| B[Backend (Supabase)]
+    B -->|Data Queries| C[Database (PostgreSQL)]
+    A -->|User Actions| D[Authentication]
+    D -->|User Data| C
 ```
 
-### Key components and their responsibilities
-- **Next.js Application**: Serves both frontend and backend functionalities, enabling server-side rendering for better SEO and performance.
-- **Supabase Auth**: Manages user authentication and session management securely.
-- **GraphQL API**: Provides centralized access to application data while maintaining a flexible data-fetching approach.
-- **PostgreSQL Database**: Robust, relational database system that handles various data types and complex queries.
-- **TailwindCSS**: Utility-first CSS framework that allows rapid UI development and ensures a consistent look and feel.
+## 4. Data Flow  
+Data will flow in a bidirectional manner between components:  
+1. User actions trigger API calls from the frontend to the backend.  
+2. The backend processes the request and returns data in JSON format via GraphQL.  
+3. The frontend updates the UI based on the received data.  
+4. For real-time updates, a WebSocket connection will be established through Supabase for data synchronization.
 
-### System boundaries and external interfaces
-- The application interacts with users through a web-based client, communicates with the Supabase authentication layer for secure logins, and performs CRUD operations on the PostgreSQL database via a GraphQL API.
+## 5. Non-Functional Requirements  
+- **Performance:** The application must load within 2 seconds on standard broadband connections.
+- **Scalability:** The application must support up to 10,000 concurrent users.
+- **Security:** Implement OAuth 2.0 via Supabase for secure user authentication and authorization.
+- **Maintainability:** Follow best coding practices and maintain clear documentation to facilitate future development.
 
-## 2. Technology Stack
+### Security Measures  
+- Use HTTPS for all connections.
+- Implement input validation and sanitization to prevent XSS and SQL injection attacks.
+- Regularly update dependencies to address vulnerabilities.
 
-### Detailed justification for each technology choice
-1. **Next.js (v15)**: Offers an optimal balance of server-side rendering and client-side interactivity, allowing enhanced loading speeds and SEO.
-2. **Supabase**: Provides a full backend solution with real-time capabilities, including database and authentication services without vendor lock-in.
-3. **PostgreSQL**: Chosen for its advanced features such as JSONB support, allowing for versatile data structures, essential for our use case.
-4. **Drizzle ORM**: Streamlines interactions with the database by abstracting complexity and ensuring type safety.
-5. **GraphQL**: Allows clients to query for precisely the data they need, minimizing the amount of transferred data and optimizing API performance.
-6. **TailwindCSS**: Facilitates a responsive, mobile-first design approach that enhances user experience without sacrificing performance.
-7. **TypeScript**: Enforces strict type-checking, ensuring reliability and maintainability of the application code.
-8. **GitHub Actions**: Implements a sophisticated CI/CD workflow that automates testing and deployment.
+## 6. Infrastructure  
+The application will be hosted on a cloud provider for scalability and availability.  
+- **Hosting:** Vercel for frontend hosting (optimized for Next.js).
+- **Database:** Supabase will handle the PostgreSQL database deployment and management.
 
-### Version requirements and compatibility considerations
-- **Next.js**: Latest stable version for optimal performance and features.
-- **Supabase**: Should always align with the latest features for compatibility.
-- **PostgreSQL**: Version 13 or above to leverage new enhancements.
+### Infrastructure Diagram  
+```mermaid
+graph TD;
+    A[User] -->|HTTP Requests| B[Frontend Server (Vercel)];
+    B -->|API Calls| C[Supabase (Backend)];
+    C -->|SQL Queries| D[PostgreSQL Database];
+```
 
-### Alternative technologies considered and why they were not chosen
-- **Firebase vs. Supabase**: Firebase's data model and lock-in potential were less appealing compared to the open-source nature of Supabase.
-- **MySQL vs. PostgreSQL**: PostgreSQL's advanced capabilities for complex queries made it superior for our needs.
-
-## 3. Component Architecture
-
-### Frontend architecture (React/Next.js structure)
-- The application is structured with a component-based hierarchy leading to optimized rendering. Global state management can be facilitated either through React context or libraries such as Redux or Zustand based on complexity.
-
-### Backend services and APIs
-- A GraphQL API serves requests, abstracts database access, and routes interactions with the PostgreSQL database.
-
-### Database design and data models
-- Data models are defined in Drizzle ORM, ensuring strong type safety and efficient migration strategies aligned with the application requirements.
-
-### Authentication and authorization flow
-- Users authenticate with Supabase, upon success, they receive JWT tokens to manage sessions securely.
-
-### External service integrations
-- Integration with third-party services should consider GraphQL for data aggregation and secure handling.
-
-## 4. Data Flow
-
-### Request/response patterns
-- Clients perform requests to the GraphQL API, which interacts with the database, returning structured data accordingly.
-
-### Data processing pipelines
-- User data is processed server-side before being sent to the frontend, ensuring efficient loading times and data integrity.
-
-### State management approach
-- Depending on complexity, state management will either utilize React's context API or an external state management library.
-
-### Caching strategy
-- Apollo Client's caching capabilities will enhance performance by reducing redundant API calls.
-
-## 5. Non-Functional Requirements
-
-### Scalability approach
-- Design is modular in nature, supporting independent scaling of services based on usage growth.
-
-### Performance considerations
-- Emphasis on server-side rendering and optimized GraphQL requests to ensure efficient user experiences.
-
-### Security measures
-- Regular security audits, token validation on all endpoints, and HTTPS enforcing.
-
-### Monitoring and observability
-- Integrate tools like Sentry for error reporting and performance monitoring to ensure operational excellence.
-
-### Disaster recovery strategy
-- Implement regular database backups, versioned deployments, and rollback procedures in CI/CD pipelines.
-
-## 6. Infrastructure
-
-### Deployment architecture
-- Utilize Vercel for hosting Next.js applications and Supabase for backend database operations, ensuring simple integrations.
-
-### CI/CD pipeline
-- GitHub Actions automate the testing and deployment process incorporating linting, testing, and build pipelines.
-
-### Environment configuration
-- Use `.env` files securely managed and excluded from version control for sensitive data.
-
-### Resource requirements
-- Always monitor resource consumption and adjust based on active user loads and application demands.
-
----
-
-## Conclusion
-This architecture document serves as a comprehensive guide for developing and maintaining a modern web application utilizing established technologies. Emphasizing security, performance, and scalability ensures that the application can evolve based on user needs and market demands.
+## Conclusion  
+This document presents a comprehensive architecture for developing a modern web application using Next.js, Supabase, PostgreSQL, GraphQL, and TailwindCSS by adhering to best practices to ensure the application is robust, scalable, and secure.
 ```

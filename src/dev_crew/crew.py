@@ -283,62 +283,38 @@ Save the technical design document to: {os.path.join(self.project_name, 'docs/te
         )
 
     @task
-    def implement_solution(self) -> Task:
-        output_file = 'implementation_summary.md'
-        input_file = os.path.join(self.project_name, 'docs/technical_design/technical_design.md')
+    def setup_framework(self) -> Task:
+        """Set up the base framework following best practices"""
         best_practices_file = os.path.join(self.project_name, 'best_practices.yaml')
-        output_path = os.path.join(self.get_docs_dir('implementation'), output_file)
-        
-        # Project should be set up in the project root, not in src
         project_dir = os.path.join(self.workspace_dir, self.project_name)
         
         return Task(
-            description=f"""First, read and analyze:
-1. Technical design document from: {input_file}
-2. Best practices and setup commands from: {best_practices_file}
+            description=f"""Set up the base framework environment:
 
-Then, implement the solution following these steps:
-
-1. Project Setup
-   Use the FrameworkTool to initialize the Next.js project:
+1. Initialize Framework
+   Use the FrameworkTool to set up the project:
    ```python
    framework_tool = FrameworkTool()
    result = framework_tool._run(
-       project_dir="{project_dir}",  # Set up in project root
+       project_dir="{project_dir}",
        config_path="{best_practices_file}"
    )
    ```
 
-2. Core Implementation (following coding standards from best_practices.yaml)
-   - Implement the frontend components and pages in src/
-   - Set up the API routes and services
-   - Configure database connections and models
-   - Implement authentication and authorization
-   - Set up state management
-
-3. Testing Setup
-   - Configure Jest and Testing Library
-   - Set up test environment
-   - Create initial test suites
-
-4. Build and Deployment
-   - Configure build process
-   - Set up CI/CD pipeline
-   - Configure deployment environments
-
-Save all implementation artifacts in: {os.path.join(self.project_name, 'src')}
-Document the implementation details in: {os.path.join(self.project_name, 'docs/implementation', output_file)}""",
-            expected_output="""Implementation completed with:
-1. Project structure and configuration
-2. Core functionality implementation
-3. Testing infrastructure
-4. Build and deployment setup
-5. Implementation documentation""",
+2. Verify Setup
+   - Confirm all configuration files are present
+   - Verify development dependencies are installed
+   - Check testing infrastructure
+   - Ensure proper directory structure""",
+            expected_output="""Framework setup completed with:
+1. Project structure initialized
+2. Dependencies installed
+3. Development environment configured
+4. Testing infrastructure ready""",
             agent=self.senior_fullstack_engineer(),
             context=[{
-                "description": "Technical design to implement",
-                "expected_output": "Implementation summary",
-                "file": self.get_absolute_path(input_file),
+                "description": "Framework setup",
+                "expected_output": "Setup verification",
                 "best_practices": self.get_absolute_path(best_practices_file),
                 "project_dir": project_dir,
                 "framework_setup": {
@@ -348,6 +324,55 @@ Document the implementation details in: {os.path.join(self.project_name, 'docs/i
                         "config_path": best_practices_file
                     }
                 }
+            }]
+        )
+
+    @task
+    def implement_requirements(self) -> Task:
+        """Implement the actual project requirements"""
+        output_file = 'implementation_summary.md'
+        input_file = os.path.join(self.project_name, 'docs/technical_design/technical_design.md')
+        output_path = os.path.join(self.get_docs_dir('implementation'), output_file)
+        project_dir = os.path.join(self.workspace_dir, self.project_name)
+        
+        return Task(
+            description=f"""Implement the project requirements based on the technical design:
+
+1. Review Documentation
+   - Read technical design from: {input_file}
+   - Understand the required features and components
+   - Review architectural decisions
+
+2. Implementation
+   - Create necessary components and modules
+   - Implement required features and functionality
+   - Follow architectural patterns and best practices
+   - Ensure proper error handling and validation
+
+3. Integration
+   - Connect components and services
+   - Implement data flow and state management
+   - Set up API endpoints and handlers
+   - Configure external service integrations
+
+4. Quality Assurance
+   - Add proper error handling
+   - Implement input validation
+   - Add loading states and feedback
+   - Ensure responsive design
+
+Document all implementation details in: {os.path.join(self.project_name, 'docs/implementation', output_file)}""",
+            expected_output="""Implementation completed with:
+1. All required features implemented
+2. Components properly integrated
+3. Error handling and validation in place
+4. Implementation documented""",
+            agent=self.senior_fullstack_engineer(),
+            context=[{
+                "description": "Project implementation",
+                "expected_output": "Implementation summary",
+                "file": self.get_absolute_path(input_file),
+                "project_dir": project_dir
             }],
             output_file=output_path
         )
@@ -492,6 +517,9 @@ Save the complete documentation to: {os.path.join(self.project_name, 'docs/docum
 
     def validate_project_setup(self) -> bool:
         """Validate the complete project setup"""
+        # Define directories to ignore
+        ignore_dirs = {'node_modules', '.next', '.git', '__pycache__', '.vscode'}
+        
         validations = [
             # Documentation structure
             self.validate_directory_structure(
@@ -566,18 +594,66 @@ Report any missing or incorrect items.""",
             }]
         )
 
+    @task
+    def review_implementation(self) -> Task:
+        """Task to review and provide feedback on implementation"""
+        output_file = 'implementation_review.md'
+        output_path = os.path.join(self.get_docs_dir('reviews'), output_file)
+        
+        return Task(
+            description=f"""Review the current implementation and provide feedback:
+
+1. Architecture Review
+   - Verify alignment with architectural decisions
+   - Check component interactions
+   - Validate technical patterns
+
+2. Code Quality Review
+   - Review code organization
+   - Check coding standards compliance
+   - Verify error handling
+   - Assess performance considerations
+
+3. Implementation Feedback
+   - Identify potential improvements
+   - Suggest optimizations
+   - Note any missing requirements
+
+4. Documentation Review
+   - Check documentation completeness
+   - Verify API documentation
+   - Review code comments
+
+Save the review feedback to: {output_path}""",
+            expected_output="""Comprehensive review including:
+1. Architecture alignment check
+2. Code quality assessment
+3. Implementation feedback
+4. Documentation review""",
+            agent=self.architect(),
+            context=[{
+                "description": "Implementation review",
+                "expected_output": "Review feedback",
+                "project_dir": self.project_name
+            }],
+            output_file=output_path
+        )
+
     @crew
     def crew(self) -> Crew:
-        """Creates the SDLC crew with validation steps"""
+        """Creates the SDLC crew with validation and feedback steps"""
         return Crew(
             agents=self.agents,
             tasks=[
                 self.analyze_requirements(),
                 self.design_architecture(),
                 self.create_technical_design(),
-                self.implement_solution(),
-                self.validate_implementation(),  # Add validation after implementation
+                self.setup_framework(),      # Phase 1: Framework Setup
+                self.validate_implementation(),
+                self.implement_requirements(),# Phase 2: Requirements Implementation
+                self.review_implementation(), # New: Implementation Review
                 self.test_solution(),
+                self.validate_implementation(),
                 self.create_documentation()
             ],
             process=Process.sequential,
@@ -700,9 +776,13 @@ deployment:
         print("Project: " + str(self.project_name))
         print("Location: " + str(self.project_dir))
         
-        # List all generated artifacts
+        # List all generated artifacts (excluding node_modules and other build directories)
+        ignore_dirs = {'node_modules', '.next', '.git', '__pycache__', '.vscode'}
         print("\nGenerated Artifacts:")
         for root, dirs, files in os.walk(os.path.join(self.workspace_dir, self.project_name)):
+            # Remove ignored directories from dirs list to prevent walking into them
+            dirs[:] = [d for d in dirs if d not in ignore_dirs]
+            
             level = root.replace(os.path.join(self.workspace_dir, self.project_name), '').count(os.sep)
             indent = ' ' * 4 * level
             print(f"{indent}{os.path.basename(root)}/")
