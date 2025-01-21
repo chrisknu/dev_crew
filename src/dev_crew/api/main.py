@@ -192,4 +192,12 @@ async def list_projects():
             "error": data.get("error")
         }
         for project_id, data in projects.items()
+    }
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for container orchestration"""
+    return {
+        "status": "healthy",
+        "timestamp": datetime.now().isoformat()
     } 
