@@ -281,26 +281,19 @@ deployment:
             print(f"Project Directory: {project_dir}")
             print(f"Config Path: {config_path}")
             
-            results = self._setup_nextjs(project_dir)
+            success = self._setup_nextjs(project_dir)
             
-            # Check if any step failed
-            failed_steps = [r for r in results if r['status'] == 'error']
-            if failed_steps:
+            if not success:
                 print("\n=== Setup Failed ===")
-                for step in failed_steps:
-                    print(f"Error in command: {step['command']}")
-                    print(f"Error output: {step['output']}")
                 return {
                     'status': 'failed',
-                    'error': 'Some setup steps failed',
-                    'failed_steps': failed_steps
+                    'error': 'Framework setup failed'
                 }
             
             print("\n=== Setup Completed Successfully ===")
             return {
                 'status': 'success',
-                'message': 'Next.js project setup completed successfully',
-                'steps': results
+                'message': 'Next.js project setup completed successfully'
             }
             
         except Exception as e:

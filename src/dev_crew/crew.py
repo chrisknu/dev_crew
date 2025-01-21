@@ -331,48 +331,80 @@ Save the technical design document to: {os.path.join(self.project_name, 'docs/te
     def implement_requirements(self) -> Task:
         """Implement the actual project requirements"""
         output_file = 'implementation_summary.md'
-        input_file = os.path.join(self.project_name, 'docs/technical_design/technical_design.md')
+        project_plan = os.path.join(self.project_name, 'docs/requirements/project_plan.md')
+        tech_design = os.path.join(self.project_name, 'docs/technical_design/technical_design.md')
+        architecture = os.path.join(self.project_name, 'docs/architecture/architecture.md')
         output_path = os.path.join(self.get_docs_dir('implementation'), output_file)
         project_dir = os.path.join(self.workspace_dir, self.project_name)
         
         return Task(
-            description=f"""Implement the project requirements based on the technical design:
+            description=f"""Implement the project requirements based on the provided documentation:
 
-1. Review Documentation
-   - Read technical design from: {input_file}
-   - Understand the required features and components
-   - Review architectural decisions
+1. Review Requirements and Design
+   - Project Plan: {project_plan}
+   - Technical Design: {tech_design}
+   - Architecture: {architecture}
 
-2. Implementation
-   - Create necessary components and modules
-   - Implement required features and functionality
-   - Follow architectural patterns and best practices
-   - Ensure proper error handling and validation
+2. Implementation Steps
+   a. For each feature in the project plan:
+      - Review the technical design for implementation details
+      - Follow the architectural patterns specified
+      - Implement the feature following best practices
+      - Add appropriate tests
+      - Document the implementation
 
-3. Integration
-   - Connect components and services
-   - Implement data flow and state management
-   - Set up API endpoints and handlers
-   - Configure external service integrations
+   b. Follow these guidelines for each component:
+      - Use TypeScript with strict type checking
+      - Implement proper error handling
+      - Add loading states and feedback
+      - Follow the component patterns from technical design
+      - Ensure responsive design
+      - Add accessibility features
+      - Include proper documentation
 
-4. Quality Assurance
-   - Add proper error handling
-   - Implement input validation
-   - Add loading states and feedback
-   - Ensure responsive design
+   c. Integration Requirements:
+      - Implement API integrations as specified
+      - Set up authentication flows
+      - Configure state management
+      - Add proper validation
+      - Handle edge cases
 
-Document all implementation details in: {os.path.join(self.project_name, 'docs/implementation', output_file)}""",
+3. Quality Checks
+   - Ensure code follows best practices
+   - Add comprehensive test coverage
+   - Include error boundaries
+   - Implement proper logging
+   - Add performance monitoring
+
+4. Documentation
+   - Document all implemented features
+   - Add inline code documentation
+   - Update API documentation
+   - Include usage examples
+   - Document any deviations from design
+
+Save the implementation summary to: {output_path}
+
+The implementation should match exactly what was specified in the project plan and follow the patterns in the technical design.""",
             expected_output="""Implementation completed with:
-1. All required features implemented
-2. Components properly integrated
-3. Error handling and validation in place
-4. Implementation documented""",
+1. All features from project plan implemented
+2. Components follow technical design
+3. Architecture patterns properly applied
+4. Tests added for all features
+5. Documentation updated""",
             agent=self.senior_fullstack_engineer(),
             context=[{
                 "description": "Project implementation",
                 "expected_output": "Implementation summary",
-                "file": self.get_absolute_path(input_file),
-                "project_dir": project_dir
+                "files": {
+                    "project_plan": self.get_absolute_path(project_plan),
+                    "technical_design": self.get_absolute_path(tech_design),
+                    "architecture": self.get_absolute_path(architecture)
+                },
+                "project_dir": project_dir,
+                "components_dir": os.path.join(project_dir, 'src/components'),
+                "lib_dir": os.path.join(project_dir, 'src/lib'),
+                "styles_dir": os.path.join(project_dir, 'src/styles')
             }],
             output_file=output_path
         )
