@@ -1,201 +1,88 @@
-# DevCrew - AI-Powered Software Development Lifecycle
+# DevCrew - AI Development Assistant
 
-DevCrew is an AI-powered software development automation tool that manages the entire software development lifecycle using specialized AI agents. It supports multiple frameworks and follows best practices for each chosen technology stack.
+DevCrew helps you build software projects using AI. It can create web apps, APIs, and full applications by following your instructions.
 
-## Features
+## 🚀 Quick Start (5 minutes)
 
-- 🤖 AI-powered development crew with specialized agents
-- 🏗️ Framework-agnostic project setup
-- 📝 Comprehensive documentation generation
-- ✅ Automated testing setup
-- 🔄 CI/CD pipeline configuration
-- 🛠️ Best practices enforcement
+1. Install Python 3.10 or newer from [python.org](https://python.org)
 
-## Prerequisites
+2. Open your terminal and run these commands:
+   ```bash
+   # Clone the project
+   git clone https://github.com/yourusername/dev-crew.git
+   cd dev-crew
 
-- Python 3.9+
-- Docker (for containerized usage)
-- OpenAI API key
-- Serper API key (for web searches)
+   # Set up Python environment
+   python -m venv .venv
+   
+   # Activate the environment:
+   # On Windows:
+   .venv\Scripts\activate
+   # On Mac/Linux:
+   source .venv/bin/activate
 
-## Installation
+   # Install required packages
+   pip install 'crewai[tools]'
+   pip install -e .
+   ```
 
-### Standalone Installation
+3. Get your API keys:
+   - Get OpenAI API key from [platform.openai.com](https://platform.openai.com)
+   - Get Serper API key from [serper.dev](https://serper.dev)
 
-1. Clone the repository:
+4. Copy `.env.example` to `.env` and add your API keys:
+   ```env
+   OPENAI_API_KEY=your-openai-key-here
+   SERPER_API_KEY=your-serper-key-here
+   ```
 
+5. Try it out:
+   ```bash
+   # Create a basic website
+   python -m dev_crew "Create a simple Next.js website with a homepage and about page"
+   ```
+
+## 🎯 What You'll Get
+
+The AI will:
+1. Plan your project
+2. Set up the code
+3. Create documentation
+4. Add tests
+5. Provide instructions
+
+All files will be in the `workspace` folder.
+
+## 🤔 Need Help?
+
+- Make sure Python is installed correctly
+- Check that your API keys are in the `.env` file
+- Make sure you activated the environment (you'll see (.venv) in your terminal)
+- Look at the [detailed guide](./docs/getting-started/beginner-setup.md) if you need more help
+
+## 📚 Examples
+
+Create a website:
 ```bash
-git clone https://github.com/yourusername/dev-crew.git
-cd dev-crew
+python -m dev_crew "Create a Next.js website with:
+- Homepage
+- About page
+- Contact form
+- Navigation menu"
 ```
 
-2. Create and activate a virtual environment:
-
+Create an API:
 ```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: .\venv\Scripts\activate
+python -m dev_crew "Create a simple API with:
+- User login
+- Database
+- Basic CRUD operations"
 ```
 
-3. Install dependencies:
+## 🛠️ Features
 
-```bash
-pip install -r requirements.txt
-```
-
-4. Set up environment variables:
-
-```bash
-cp .env.example .env
-# Edit .env with your API keys
-```
-
-### Docker Installation
-
-1. Build the Docker image:
-
-```bash
-docker build -t dev-crew .
-```
-
-## Usage
-
-### Standalone Usage
-
-1. Run as a CLI tool:
-
-```bash
-# Basic usage
-crew run "Create a modern web application with Next.js and TypeScript"
-
-# Specify project name
-crew run --project-name my-app "Create a REST API with FastAPI"
-
-# Set custom timeout
-crew run --timeout 7200 "Create a full-stack application"
-```
-
-2. Available commands:
-
-```bash
-crew run      # Run a new project
-crew train    # Train the crew (for development)
-crew replay   # Replay a specific task
-crew test     # Run test iterations
-```
-
-### API Server Usage
-
-1. Start the API server:
-
-```bash
-# Using Python
-uvicorn dev_crew.api.main:app --reload
-
-# Using Docker
-docker run -p 8000:8000 -e OPENAI_API_KEY=your_key dev-crew
-```
-
-2. API Endpoints:
-
-```bash
-POST /projects/
-- Create a new project
-- Body: {
-    "requirements": "Project requirements",
-    "project_name": "optional-name",
-    "timeout": 3600
-  }
-
-GET /projects/{project_id}
-- Get project status
-
-POST /projects/{project_id}/cancel
-- Cancel a running project
-```
-
-### Docker Compose Usage
-
-1. Start all services:
-
-```bash
-docker-compose up -d
-```
-
-2. Access the services:
-
-- API: http://localhost:8000
-- Documentation: http://localhost:8000/docs
-- Monitoring: http://localhost:8000/metrics
-
-## Configuration
-
-### Environment Variables
-
-```env
-OPENAI_API_KEY=your_openai_api_key
-SERPER_API_KEY=your_serper_api_key
-MODEL_NAME=gpt-4  # or other OpenAI model
-LOG_LEVEL=INFO
-```
-
-### Framework Configuration
-
-Framework-specific configurations are stored in `src/dev_crew/config/best_practices.yaml`. Add new frameworks by following the existing structure:
-
-```yaml
-frameworks:
-  nextjs:
-    setup:
-      - command: "..."
-        description: "..."
-    dependencies:
-      core: [...]
-      dev: [...]
-```
-
-## Development
-
-1. Install development dependencies:
-
-```bash
-pip install -r requirements-dev.txt
-```
-
-2. Run tests:
-
-```bash
-pytest
-```
-
-3. Format code:
-
-```bash
-black src/
-isort src/
-```
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Support
-
-For support, please:
-
-1. Check the [documentation](docs/)
-2. Open an issue
-3. Contact the maintainers
-
-## Acknowledgments
-
-- OpenAI for the GPT models
-- CrewAI framework
-- All contributors
+- Creates full projects from descriptions
+- Sets up best practices automatically
+- Generates documentation
+- Adds testing
+- Follows modern development standards
